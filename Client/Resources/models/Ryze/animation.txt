@@ -1,0 +1,5 @@
+stand: Ryze_stand.png
+start_move: Ryze_start_move.png
+move: Ryze_walk_1.png Ryze_walk_2.png
+end_move: Ryze_walk_1.png Ryze_walk_2.png
+autoattacks: CupOfCoffee.png
