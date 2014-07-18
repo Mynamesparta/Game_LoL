@@ -18,7 +18,7 @@ public:
     float length(Point point1,Point point3);
     float length(QPoint point1,QPoint point3);
 private:
-    bool d_length(QPoint point1,QPoint point3,Point point,QPoint KingsPoint,int radius);
+    bool d_length(QPoint point1, QPoint point3, Point point, QPoint KingsPoint, int radius, bool b=0);
     int sign(QPoint point1,QPoint point3,Point currentPoint,QPoint KingsPoint);
     void move_along_wall(Point& M);
     QRegExp qreForFile;

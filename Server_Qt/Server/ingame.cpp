@@ -9,7 +9,7 @@ InGame::InGame(QObject *server,int Index):server(server),/*Text(""),*/maxIndexof
 
     for(int i=0;i<=World_of_const::N-1;i++)
     {
-        UserInfo[i]=NULL;
+        summoner[i]=NULL;
     }
     map=new Map();
 }
@@ -17,9 +17,9 @@ InGame::~InGame()
 {
     for(int i=0;i<=maxIndexofUser;i++)
     {
-        if(UserInfo[i]!=NULL)
+        if(summoner[i]!=NULL)
         {
-            delete UserInfo[i];
+            delete summoner[i];
         }
     }
 }
@@ -32,14 +32,14 @@ void InGame::run()
     Text+="Start Game:";
     for(int i=0;i<=maxIndexofUser;i++)
     {
-        Text+=UserInfo[i]->UserName+" ";
+        Text+=summoner[i]->UserName+" ";
     }
     sendToClient(Text);
     sendToClient("0 move:3000 5000");
     Point point;
     point.x=3000.0;
     point.y=5000.0;
-    UserInfo[0]->current_position=UserInfo[0]->move_position=point;
+    summoner[0]->current_position=summoner[0]->move_position=point;
     while(ThisWorldMove())
     {
         msleep(2*World_of_const::TimeStep_World_move-World_of_const::TimeStep_World_move);
@@ -49,7 +49,7 @@ void InGame::run()
 }
 void InGame::addUser(QTcpSocket* Socket,QString UserName,int Index,int Team)
 {
-    UserInfo[++maxIndexofUser]=new Infotmation(Socket,UserName,Index);
+    summoner[++maxIndexofUser]=new Summoner(Socket,UserName,Index);
     if(!Team)
     {
         if(maxIndexofUser%2==0)
@@ -94,12 +94,12 @@ int InGame::takeMaxIndex()
 }
 int InGame::takeIndexOfClient(int Index)
 {
-    return UserInfo[Index]->IndexOfClient;
+    return summoner[Index]->IndexOfClient;
 }
 
 QTcpSocket* InGame::TakeSocket(int Index)
 {
-    return UserInfo[Index]->qtcpSocket;
+    return summoner[Index]->qtcpSocket;
 }
 
 
@@ -109,27 +109,43 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
 {
     for(int i=0;i<=maxIndexofUser;i++)
     {
-        if(!UserInfo[i]->IsLogOut)
+        if(!summoner[i]->IsLogOut)
         {
-            dx=UserInfo[i]->move_position.x-UserInfo[i]->current_position.x;
-            dy=UserInfo[i]->move_position.y-UserInfo[i]->current_position.y;
+            dx=summoner[i]->move_position.x-summoner[i]->current_position.x;
+            dy=summoner[i]->move_position.y-summoner[i]->current_position.y;
+            //qDebug()<<"ingame.cpp: after-current_position.x=("<<UserInfo[i]->current_position.x<<") current_position.y=("<<UserInfo[i]->current_position.y<<")";
             l=sqrt(dx*dx+dy*dy);
             if(l!=0)
             {
                 if(l<=World_of_const::L)
                 {
-                    UserInfo[i]->current_position=UserInfo[i]->move_position;
-                    sendToClient(QString::number(i)+" end_move:"+QString::number(UserInfo[i]->current_position.x)+
-                                 " "+QString::number(UserInfo[i]->current_position.y));
+                    summoner[i]->current_position=summoner[i]->move_position;
+                    if(map->isWall(summoner[i]->current_position,20))
+                    {
+                        summoner[i]->move_position=summoner[i]->current_position;
+                    }
+                    sendToClient(QString::number(i)+" end_move:"+QString::number(summoner[i]->current_position.x)+
+                                 " "+QString::number(summoner[i]->current_position.y));
                 }
                 else
                 {
-                    UserInfo[i]->current_position.x+=World_of_const::L*dx/l;
-                    UserInfo[i]->current_position.y+=World_of_const::L*dy/l;
-                    map->isWall(UserInfo[i]->current_position,20);
-                    sendToClient(QString::number(i)+" move:"+QString::number(UserInfo[i]->current_position.x)+
-                                 " "+QString::number(UserInfo[i]->current_position.y));
+                    summoner[i]->current_position.x+=World_of_const::L*dx/l;
+                    summoner[i]->current_position.y+=World_of_const::L*dy/l;
+                    if(map->isWall(summoner[i]->current_position,World_of_const::radius_of_champion))
+                    {
+                        if(map->length(summoner[i]->last_position,summoner[i]->current_position)<2)
+                        {
+                            sendToClient(QString::number(i)+" end_move:"+QString::number(summoner[i]->current_position.x)+
+                                         " "+QString::number(summoner[i]->current_position.y));
+                            summoner[i]->last_position=summoner[i]->current_position;
+                            summoner[i]->move_position=summoner[i]->current_position;
+                            return 1;
+                        }
+                    }
+                    sendToClient(QString::number(i)+" move:"+QString::number(summoner[i]->current_position.x)+
+                                 " "+QString::number(summoner[i]->current_position.y));
                 }
+                summoner[i]->last_position=summoner[i]->current_position;
             }
         }
     }
@@ -140,14 +156,14 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
 //================Send=or=Read============================================
 void InGame::sendToClient(const QString& str,int Index)
 {
+    qDebug()<<"ingame.cpp: Hello World!";
     if(Index==-1)
     {
         for(int i=0;i<=maxIndexofUser;i++)
         {
-            if(!UserInfo[i]->IsLogOut)
+            if(!summoner[i]->IsLogOut)
             {
-                //qDebug()<<Round-1;
-                QSendToClientEvent* pe=new QSendToClientEvent(UserInfo[i]->IndexOfClient);
+                QSendToClientEvent* pe=new QSendToClientEvent(summoner[i]->IndexOfClient);
                 pe->Text=str;
                 pe->forSwitch=0;
                 QApplication::postEvent(server,pe);
@@ -156,9 +172,9 @@ void InGame::sendToClient(const QString& str,int Index)
     }
     else
     {
-        if(!UserInfo[Index]->IsLogOut)
+        if(!summoner[Index]->IsLogOut)
         {
-            QSendToClientEvent* pe=new QSendToClientEvent(UserInfo[Index]->IndexOfClient);
+            QSendToClientEvent* pe=new QSendToClientEvent(summoner[Index]->IndexOfClient);
             pe->Text=str;
             pe->forSwitch=0;
             QApplication::postEvent(server,pe);
@@ -169,11 +185,11 @@ void InGame::sendToClient(const QString& str,int Index)
 
 void InGame::ReadyRead(int UserIndex, QString str)
 {
-    qDebug()<<"ingame:User["<<UserInfo[UserIndex]->UserName<<"] send to Server:"<<str;
+    qDebug()<<"ingame:User["<<summoner[UserIndex]->UserName<<"] send to Server:"<<str;
 
     if(str=="SUR")
     {
-        UserInfo[UserIndex]->IsLogOut=1;
+        summoner[UserIndex]->IsLogOut=1;
         return;
     }
 
@@ -181,8 +197,8 @@ void InGame::ReadyRead(int UserIndex, QString str)
     {
         if(qre.cap(1)=="move")
         {
-            UserInfo[UserIndex]->move_position.x=qre.cap(2).toInt();
-            UserInfo[UserIndex]->move_position.y=qre.cap(3).toInt();
+            summoner[UserIndex]->move_position.x=qre.cap(2).toInt();
+            summoner[UserIndex]->move_position.y=qre.cap(3).toInt();
             return;
         }
         if(qre.cap(1)=="skill_1")

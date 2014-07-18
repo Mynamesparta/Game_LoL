@@ -50,8 +50,10 @@ Map::Map(): qreForFile("_([0-9]+),([0-9]+)_ ([0-9 ]+)"),file("Resources/Wall.txt
                     point.setX(str.toInt());
                 }
             }
+            wall[maxIndexofWall]->Radius+=World_of_const::radius_of_champion;
         }
     }
+    maxRadius+=World_of_const::radius_of_champion;
     file.close();
 }
 
@@ -67,6 +69,7 @@ bool Map::isWall(Point& currentPoint,int radius)
 {
     Index=0;i=maxIndexofWall/2;
     maxRadius+=radius;
+    bool b=0;
     while(i>1)
     {
         Index+=i;
@@ -120,7 +123,7 @@ bool Map::isWall(Point& currentPoint,int radius)
         //qDebug()<<"wall.cpp: length"<<vectorforwall.length();
         if(length(currentPoint,_wall->KingsPoint)<_wall->Radius)
         {
-            qDebug()<<"wall.cpp: Kings point="<<_wall->KingsPoint<<" pos="<<currentPoint.x<<","<<currentPoint.y;
+            //qDebug()<<"wall.cpp: Kings point="<<_wall->KingsPoint<<" pos="<<currentPoint.x<<","<<currentPoint.y;
             iteratorforPoint2=_wall->vectorforPoint.begin();
             l=_wall->Radius;
             for(;iteratorforPoint2<_wall->vectorforPoint.end();iteratorforPoint2++)
@@ -158,7 +161,6 @@ bool Map::isWall(Point& currentPoint,int radius)
                 iteratorforPoint1--;
             }
 
-            bool b=0;
             if(d_length(point1,point2,currentPoint,_wall->KingsPoint,radius))
             {
                 move_along_wall(currentPoint);
@@ -166,14 +168,14 @@ bool Map::isWall(Point& currentPoint,int radius)
             }
 
 
-            if(d_length(point3,point2,currentPoint,_wall->KingsPoint,radius))
+            if(d_length(point3,point2,currentPoint,_wall->KingsPoint,radius,b))
             {
                 move_along_wall(currentPoint);
                 b=1;
             }
         }
     }
-    return 0;
+    return b;
 }
 float Map::length(Point point1,QPoint point2)
 {
@@ -193,62 +195,112 @@ float Map::length(QPoint point1,QPoint point2)
     float dy=point1.y()-point2.y();
     return sqrt(dx*dx+dy*dy);
 }
-bool Map::d_length(QPoint A, QPoint B, Point M,QPoint KingsPoint,int radius)
+bool Map::d_length(QPoint A, QPoint B, Point M,QPoint KingsPoint,int radius,bool b)
 {
     if(B.y()<A.y())
     {
         point1=B;
         B=A;
         A=point1;
-
     }
     dx=B.x()-A.x();
     dy=B.y()-A.y();
-    dx_dy=dx/dy;
-    y=-(M.x-A.x())*dx_dy+A.y();
-    /*qDebug()<<"wall.cpp: M.x="<<M.x<<" M.x-A.x()="<<M.x-A.x()<<" (M.x-A.x())*dx_dy="<<(M.x-A.x())*dx_dy<<" y="<<y;
-    qDebug()<<"dx="<<dx<<" dy="<<dy;
-    qDebug()<<A<<B;*/
-    if(y>M.y)
+    if(dy!=0)
     {
-        l=length(M,A);
-        if(l<radius)
+        dx_dy=dx/dy;
+        y=-(M.x-A.x())*dx_dy+A.y();
+        /*qDebug()<<"wall.cpp: M.x="<<M.x<<" M.x-A.x()="<<M.x-A.x()<<" (M.x-A.x())*dx_dy="<<(M.x-A.x())*dx_dy<<" y="<<y;
+        qDebug()<<"dx="<<dx<<" dy="<<dy;
+        qDebug()<<A<<B;*/
+        if(y>M.y)
         {
-            x=A.x();
-            y=A.y();
-        }
-        else return 0;
-    }
-    else
-    {
-        y=-(M.x-B.x())*dx_dy+B.y();
-        if(y <M.y)
-        {
-            l=length(M,B);
+            l=length(M,A);
             if(l<radius)
             {
-                x=B.x();
-                y=B.y();
+                x=A.x();
+                y=A.y();
+                b=1;
             }
             else return 0;
         }
         else
         {
-            l=(float)(M.x*(dy)+ M.y*(-dx)+(A.x()*(-dy)+A.y()*(dx)));
-            l=l/length(A,B);
-            if(!((l>=0?l:-l)<radius))
+            y=-(M.x-B.x())*dx_dy+B.y();
+            if(y<M.y)
             {
-                return 0;
+                l=length(M,B);
+                if(l<radius)
+                {
+                    x=B.x();
+                    y=B.y();
+                    b=1;
+                }
+                else return 0;
             }
-            x=(M.y-A.y()+M.x*(dx_dy)+A.x()/(dx_dy))/(dx_dy+1/dx_dy);
-            y=(x-A.x())/dx_dy+A.y();
+            else
+            {
+                l=(float)(M.x*(dy)+ M.y*(-dx)+(A.x()*(-dy)+A.y()*(dx)));
+                l=l/length(A,B);
+                if(!((l>=0?l:-l)<radius))
+                {
+                    return 0;
+                }
+                x=(M.y-A.y()+M.x*(dx_dy)+A.x()/(dx_dy))/(dx_dy+1/dx_dy);
+                y=(x-A.x())/dx_dy+A.y();
+            }
         }
+    }
+    else //dy=0
+    {
+        //qDebug()<<"wall.cpp: dy=0";
+        if(B.x()<A.x())
+        {
+            point1=B;
+            B=A;
+            A=point1;
+        }
+        if(M.x<A.x())
+        {
+            l=length(M,A);
+            if(l<radius)
+            {
+                x=A.x();
+                y=A.y();
+                b=1;
+            }
+            else return 0;
+        }
+        else
+        {
+            if(M.x>B.x())
+            {
+                l=length(M,B);
+                if(l<radius)
+                {
+                    x=B.x();
+                    y=B.y();
+                    b=1;
+                }
+                else return 0;
+            }
+            else
+            {
+                l=A.y()-M.y;
+                if(!((l>=0?l:-l)<radius))
+                {
+                    return 0;
+                }
+                x=M.x;
+                y=A.y();
+            }
+        }
+
     }
     dx=M.x-x;
     dy=M.y-y;
     l=sqrt(dx*dx+dy*dy);
     l=((float)radius)/l;
-    if(sign(A,B,M,KingsPoint)==-1)
+    if((sign(A,B,M,KingsPoint)==-1)+b)
     {
         x=x+l*dx;
         y=y+l*dy;

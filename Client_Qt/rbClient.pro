@@ -15,7 +15,8 @@ SOURCES += \
     Object/summoner.cpp \
     Object/champion.cpp \
     Client/view.cpp \
-    Object/champion_selection.cpp
+    Object/champion_selection.cpp \
+    Object/Champion/Ryze.cpp
 
 HEADERS  += \
     Client/gamefield.h\

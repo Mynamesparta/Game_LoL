@@ -9,17 +9,13 @@
 #include <QFile>
 #include "Object/wall.h"
 #include "World_of_Const.h"
-struct Point
-{
-    float x;
-    float y;
-};
+#include "Object/summoner.h"
+
+struct Point;
 class QTcpSocket;
-//enum StateInGame{Alive,Win,Lose,Surrender};
-class Infotmation;
 class QSendToClientEvent;
 class Map;
-//class SendToClient;
+class Summoner;
 
 class InGame : public QThread
 {
@@ -51,30 +47,13 @@ public:
     //StateInGame takeState(int Index);
     QTcpSocket* TakeSocket(int);
 
-    Infotmation* UserInfo[World_of_const::N];
+    Summoner* summoner[World_of_const::N];
 
 public slots:
 private slots:
     bool ThisWorldMove();
 signals:
     void sigEndGame(int);
-};
-//======================================
-class Infotmation:public QObject
-{
-public:
-    Infotmation(QTcpSocket* Socket,QString UserName,int Index):qtcpSocket(Socket),UserName(UserName),IndexOfClient(Index)
-    {
-        current_position.x=current_position.y=
-                move_position.x=move_position.y=0;
-    }
-    QTcpSocket* qtcpSocket;
-    const QString UserName;
-    const int IndexOfClient;
-    Point current_position;
-    Point move_position;
-    bool IsBlocked=0;
-    bool IsLogOut;
 };
 //===========QSendToClientEvent============================
 class QSendToClientEvent:public QEvent

@@ -6,5 +6,9 @@ ChampionSelection::ChampionSelection()
 
 Champion* ChampionSelection::take(QString nameofChampion)
 {
-    return new Champion("Ryze");
+    if(nameofChampion=="Ryze")
+    {
+        Ryze* ryze=new Ryze();
+        return(Champion*) ryze;
+    }
 }

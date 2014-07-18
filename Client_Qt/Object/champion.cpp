@@ -166,7 +166,12 @@ void Champion::move(float x,float y)
 
 void Champion::end_move(float x,float y)
 {
-    this->setPos(x,y);
+    this->setPos(x,y);dx=x-current_X;
+    dy=y-current_Y;
+    l=sqrt(dx*dx+dy*dy);//                      180/пі
+    angle=(dy>0?1:-1)*(acos(dx/l) - (this->rotation()) )*57.29577951;//
+    current_X=x;
+    current_Y=y;
     switch(stateofAnimation)
     {
         case World_of_const::Move:
