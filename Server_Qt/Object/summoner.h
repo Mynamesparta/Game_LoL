@@ -16,7 +16,7 @@ struct Point
 class Summoner
 {
 public:
-    Summoner(QTcpSocket* Socket,QString UserName,int Index);
+    Summoner(QTcpSocket* Socket,QString UserName,int Index,Champion* champion);
     QTcpSocket* qtcpSocket;
     const QString UserName;
     const int IndexOfClient;
@@ -25,6 +25,8 @@ public:
     Point move_position;
     bool IsBlocked=0;
     bool IsLogOut;
+private:
+    Champion* champion;
 
 };
 

@@ -10,12 +10,14 @@
 #include "Object/wall.h"
 #include "World_of_Const.h"
 #include "Object/summoner.h"
+#include "Object/champion_selection.h"
 
 struct Point;
 class QTcpSocket;
 class QSendToClientEvent;
 class Map;
 class Summoner;
+class ChampionSelection;
 
 class InGame : public QThread
 {

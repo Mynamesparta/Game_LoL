@@ -3,7 +3,7 @@
 
 GameField::GameField(QObject *client, bool isSingleGame):
     client(client),isSingleGame(isSingleGame),
-    view(&scene),qre("([0-9]+) ((?:move)|(?:end_move)):(\\-{0,1}[0-9]+\\.?[0-9]*) (\\-{0,1}[0-9]+\\.?[0-9]*)"),
+    view(&scene),qre("([0-9]+) ((?:move)|(?:end_move)|(?:skill_1)|(?:skill_2)|(?:skill_3)|(?:skill_4)):(\\-{0,1}[0-9]+\\.?[0-9]*) (\\-{0,1}[0-9]+\\.?[0-9]*)"),
     qreForFile("_([0-9]+),([0-9]+)_ ([0-9 ]+)")
 {
     if(isWallViseble)
@@ -172,10 +172,9 @@ void GameField::customEvent(QEvent* pe)
 //==================Read=or=Send============
 void GameField::ReadyRead(QString text)
 {
-
+    qDebug()<<text;
     if(text.contains(qre))
     {
-        qDebug()<<text;
         if(qre.cap(2)=="move")
         {
             summoner[qre.cap(1).toInt()]->
@@ -186,6 +185,26 @@ void GameField::ReadyRead(QString text)
         {
             summoner[qre.cap(1).toInt()]->
                     end_move(qre.cap(3).toFloat(),qre.cap(4).toFloat());
+            return;
+        }
+        if(qre.cap(2)=="skill_1")
+        {
+            summoner[qre.cap(1).toInt()]->First_skill();
+            return;
+        }
+        if(qre.cap(2)=="skill_2")
+        {
+            summoner[qre.cap(1).toInt()]->Second_skill();
+            return;
+        }
+        if(qre.cap(2)=="skill_3")
+        {
+            summoner[qre.cap(1).toInt()]->Third_skill();
+            return;
+        }
+        if(qre.cap(2)=="skill_4")
+        {
+            summoner[qre.cap(1).toInt()]->Fourth_skill();
             return;
         }
     }

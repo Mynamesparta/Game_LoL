@@ -15,7 +15,9 @@ SOURCES += \
     Server/ingame.cpp \
     Object/summoner.cpp \
     Object/champion.cpp \
-    Object/wall.cpp
+    Object/wall.cpp \
+    Object/champion_selection.cpp \
+    Object/Champion/Ryze.cpp
 
 HEADERS  += \
     Server/server.h \
@@ -23,5 +25,6 @@ HEADERS  += \
     Object/summoner.h \
     Object/champion.h \
     Object/wall.h \
-    World_of_Const.h
+    World_of_Const.h \
+    Object/champion_selection.h
 

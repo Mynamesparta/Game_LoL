@@ -49,7 +49,8 @@ void InGame::run()
 }
 void InGame::addUser(QTcpSocket* Socket,QString UserName,int Index,int Team)
 {
-    summoner[++maxIndexofUser]=new Summoner(Socket,UserName,Index);
+    Champion* champion=ChampionSelection::take("Ryze");
+    summoner[++maxIndexofUser]=new Summoner(Socket,UserName,Index,champion);
     if(!Team)
     {
         if(maxIndexofUser%2==0)
@@ -115,7 +116,7 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
             dy=summoner[i]->move_position.y-summoner[i]->current_position.y;
             //qDebug()<<"ingame.cpp: after-current_position.x=("<<UserInfo[i]->current_position.x<<") current_position.y=("<<UserInfo[i]->current_position.y<<")";
             l=sqrt(dx*dx+dy*dy);
-            if(l!=0)
+            if(l)
             {
                 if(l<=World_of_const::L)
                 {
@@ -139,7 +140,7 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
                                          " "+QString::number(summoner[i]->current_position.y));
                             summoner[i]->last_position=summoner[i]->current_position;
                             summoner[i]->move_position=summoner[i]->current_position;
-                            return 1;
+                            continue;
                         }
                     }
                     sendToClient(QString::number(i)+" move:"+QString::number(summoner[i]->current_position.x)+
@@ -156,7 +157,6 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
 //================Send=or=Read============================================
 void InGame::sendToClient(const QString& str,int Index)
 {
-    qDebug()<<"ingame.cpp: Hello World!";
     if(Index==-1)
     {
         for(int i=0;i<=maxIndexofUser;i++)
@@ -203,22 +203,22 @@ void InGame::ReadyRead(int UserIndex, QString str)
         }
         if(qre.cap(1)=="skill_1")
         {
-            qDebug()<<"ingame.cpp:skill_1";
+            sendToClient(QString::number(UserIndex)+" skill_1:0 0");
             return;
         }
         if(qre.cap(1)=="skill_2")
         {
-            qDebug()<<"ingame.cpp:skill_2";
+            sendToClient(QString::number(UserIndex)+" skill_2:0 0");
             return;
         }
         if(qre.cap(1)=="skill_3")
         {
-            qDebug()<<"ingame.cpp:skill_3";
+            sendToClient(QString::number(UserIndex)+" skill_3:0 0");
             return;
         }
         if(qre.cap(1)=="skill_4")
         {
-            qDebug()<<"ingame.cpp:skill_4";
+            sendToClient(QString::number(UserIndex)+" skill_4:0 0");
             return;
         }
 
