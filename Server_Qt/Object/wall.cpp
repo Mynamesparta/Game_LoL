@@ -65,7 +65,7 @@ Map::~Map()
     }
 }
 
-bool Map::isWall(Point& currentPoint,int radius)
+bool Map::isWall(Point& currentPoint, int radius)
 {
     Index=0;i=maxIndexofWall/2;
     maxRadius+=radius;

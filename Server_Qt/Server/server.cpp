@@ -1,7 +1,7 @@
 #include "server.h"
 
 Server::Server(int nPort, QWidget *parent)
-    : QWidget(parent),m_nNextBlockSize(0),numPeople(1),
+    : QWidget(parent),m_nNextBlockSize(0),
       qreUserName("[a-zA-z]{4,16}$"),qreCreateLobby("Create Lobby:([a-zA-z_ ]{3,30})$"),
       qreContoLobby("con ([a-zA-z_ ]{3,30}) \\["),
       qreinLobbyChat("chat ([^\\^]+)")
@@ -345,7 +345,7 @@ void Server::sendToGame(int Index,const QString& str)
 //==========================Create|Destroy=Game=====================================
 void Server::slotCreateGame()
 {
-    if(qlSearch.size()>=numPeople)//---------------CREATE-THE-WORLD----------------
+    if(qlSearch.size()>=World_of_const::numPeople)//---------------CREATE-THE-WORLD----------------
     {
         int j=0;
         while(ingame[j]!=NULL)
@@ -361,7 +361,7 @@ void Server::slotCreateGame()
         connect(ingame[j],SIGNAL(sigEndGame(int)),
                 this,SLOT(slotDestroyGame(int)));
         qDebug()<<"Create Game for Users:";
-        for(int i=0;i<=numPeople-1;i++)
+        for(int i=0;i<=World_of_const::numPeople-1;i++)
         {
             int Index=qlSearch.takeFirst();
             qDebug()<<client[Index]->UserName;

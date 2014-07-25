@@ -2,22 +2,18 @@
 #define SUMMONER_H
 
 #include "champion.h"
-#include "World_of_Const.h"
+#include "Worlds/World_of_Const.h"
+#include "Worlds/World_of_Struct.h"
 
 class Champion;
 class QTcpSocket;
-
-struct Point
-{
-    float x;
-    float y;
-};
+struct Point;
 
 class Summoner
 {
 public:
     Summoner(QTcpSocket* Socket,QString UserName,int Index,Champion* champion);
-    QTcpSocket* qtcpSocket;
+    const QTcpSocket *takeSocket();
     const QString UserName;
     const int IndexOfClient;
     Point last_position;
@@ -27,6 +23,7 @@ public:
     bool IsLogOut;
 private:
     Champion* champion;
+    QTcpSocket const * qtcpSocket;
 
 };
 

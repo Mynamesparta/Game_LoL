@@ -15,16 +15,20 @@ View::~View()
 //====================Event================
 void View::mousePressEvent(QMouseEvent* event)
 {
-     mouse_position=QPoint(event->x()+ this->horizontalScrollBar()->value(),
-                           event->y()+ this->verticalScrollBar()->value());
-     if(event->buttons()==Qt::LeftButton)
-     {
+    if(event->buttons()==Qt::LeftButton)
+    {
         stateofMouse=PressLeft;
-     }
-     else
-     {
+        mouse_position=QPoint(event->x()+ this->horizontalScrollBar()->value(),
+                              event->y()+ this->verticalScrollBar()->value());
+        return;
+    }
+    if(event->buttons()==Qt::RightButton)
+    {
         stateofMouse=PressRight;
-     }
+        mouse_position=QPoint(event->x()+ this->horizontalScrollBar()->value(),
+                              event->y()+ this->verticalScrollBar()->value());
+        return;
+    }
 }
 
 void View::mouseMoveEvent(QMouseEvent* event)

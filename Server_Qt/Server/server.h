@@ -7,8 +7,9 @@
 #include <QIODevice>
 #include <QRegExp>
 #include <QApplication>
-#include "ingame.h"
 #include <QVector>
+#include "ingame.h"
+#include "Worlds/World_of_Const.h"
 class QTcpServer;
 class QTcpSocket;
 class ClientsInfo;
@@ -28,7 +29,6 @@ private:
     QRegExp qreinLobbyChat;
     quint16 m_nNextBlockSize;
     QList<unsigned int> qlSearch;
-    const unsigned int numPeople;
     int maxIndexClintInfo=-1;
     QVector<Lobby*> ListofLobby;
     InGame *ingame[500];

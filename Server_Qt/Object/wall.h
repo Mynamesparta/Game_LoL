@@ -3,10 +3,13 @@
 
 #include <QDebug>
 #include <QFile>
-#include "Server/ingame.h"
 #include <QRegExp>
 #include <QPoint>
+#include "Server/ingame.h"
+#include "Worlds/World_of_Const.h"
+#include "Worlds/World_of_Struct.h"
 class Point;
+class Summoner;
 struct Wall;
 class Map
 {
@@ -17,6 +20,7 @@ public:
     float length(Point point1, QPoint point3);
     float length(Point point1,Point point3);
     float length(QPoint point1,QPoint point3);
+    Summoner* summoner[World_of_const::N];
 private:
     bool d_length(QPoint point1, QPoint point3, Point point, QPoint KingsPoint, int radius, bool b=0);
     int sign(QPoint point1,QPoint point3,Point currentPoint,QPoint KingsPoint);

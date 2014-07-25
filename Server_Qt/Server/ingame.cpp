@@ -40,10 +40,20 @@ void InGame::run()
     point.x=3000.0;
     point.y=5000.0;
     summoner[0]->current_position=summoner[0]->move_position=point;
+    unsigned int lastTime=World_of_const::TimeStep_World_move+1;
+    timer.start();
     while(ThisWorldMove())
     {
-        msleep(2*World_of_const::TimeStep_World_move-World_of_const::TimeStep_World_move);
         QApplication::processEvents();
+        if(lastTime!=timer.elapsed())
+        {
+            qDebug()<<"####################################################";
+            qDebug()<<"ingame.cpp:timer.elapsed()="<<timer.elapsed();
+            qDebug()<<"####################################################";
+        }
+        lastTime=timer.elapsed();
+        msleep(World_of_const::TimeStep_World_move-timer.elapsed());
+        timer.restart();
     };
     sigEndGame(IndexOfGame);
 }
@@ -51,6 +61,7 @@ void InGame::addUser(QTcpSocket* Socket,QString UserName,int Index,int Team)
 {
     Champion* champion=ChampionSelection::take("Ryze");
     summoner[++maxIndexofUser]=new Summoner(Socket,UserName,Index,champion);
+    map->summoner[maxIndexofUser]=summoner[maxIndexofUser];
     if(!Team)
     {
         if(maxIndexofUser%2==0)
@@ -98,9 +109,9 @@ int InGame::takeIndexOfClient(int Index)
     return summoner[Index]->IndexOfClient;
 }
 
-QTcpSocket* InGame::TakeSocket(int Index)
+QTcpSocket const *  InGame::TakeSocket(int Index)
 {
-    return summoner[Index]->qtcpSocket;
+    return summoner[Index]->takeSocket();
 }
 
 
@@ -108,6 +119,7 @@ QTcpSocket* InGame::TakeSocket(int Index)
 //====================Move=this=world========================================
 bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)>)>)>)>>
 {
+    //+++++++++++++++++++++++++Summoners+movement+++++++++++++++++++++
     for(int i=0;i<=maxIndexofUser;i++)
     {
         if(!summoner[i]->IsLogOut)
@@ -150,6 +162,7 @@ bool InGame::ThisWorldMove()//QTimerEvent* event,TimerEvent,MoveThisWorld ((^.^)
             }
         }
     }
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     return 1;
 }
 
@@ -186,7 +199,6 @@ void InGame::sendToClient(const QString& str,int Index)
 void InGame::ReadyRead(int UserIndex, QString str)
 {
     qDebug()<<"ingame:User["<<summoner[UserIndex]->UserName<<"] send to Server:"<<str;
-
     if(str=="SUR")
     {
         summoner[UserIndex]->IsLogOut=1;

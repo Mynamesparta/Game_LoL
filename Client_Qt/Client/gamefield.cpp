@@ -92,11 +92,13 @@ bool GameField::ThisWorldMove()
             {
                 SendToServer("move:"+QString::number(mouse_position.x())
                              +" "+QString::number(mouse_position.y()));
+                qDebug()<<"gamefield.cpp: Move mouse";
             }
             break;
         }
         case Release:
         {
+            qDebug()<<"gamefield.cpp: Release mouse";
             isMove=0;
             break;
         }
@@ -108,6 +110,7 @@ bool GameField::ThisWorldMove()
         {
             SendToServer("move:"+QString::number(mouse_position.x())
                          +" "+QString::number(mouse_position.y()));
+            qDebug()<<"gamefield.cpp: PressRight mouse";
             isMove=1;
             break;
         }
@@ -172,7 +175,7 @@ void GameField::customEvent(QEvent* pe)
 //==================Read=or=Send============
 void GameField::ReadyRead(QString text)
 {
-    qDebug()<<text;
+    //qDebug()<<"gamefield.cpp: "<<text;
     if(text.contains(qre))
     {
         if(qre.cap(2)=="move")
