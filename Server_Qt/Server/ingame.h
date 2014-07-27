@@ -38,7 +38,7 @@ private:
     int dx;
     int dy;
     const unsigned int IndexOfGame;
-    Skills skills;
+    Skills* skills;
     QTime timer;
     QObject* server;
     Map* map;

@@ -4,14 +4,15 @@
 //=================Begin=Or=End=?========================================
 InGame::InGame(QObject *server,int Index):server(server),/*Text(""),*/maxIndexofUser(-1),IndexOfGame(Index)
   ,QThread(0),
-    qre("((?:move)||(?:skill_1)||(?:skill_2)||(?:skill_3)||(?:skill_4)):(\\-{0,1}[0-9]+) (\\-{0,1}[0-9]+)")
+    qre("([a-zA-Z]+):(\\-{0,1}[0-9]+) (\\-{0,1}[0-9]+)")//(?:move)||(?:skill_1)||(?:skill_2)||(?:skill_3)||(?:skill_4)
 {
 
     for(int i=0;i<=World_of_const::N-1;i++)
     {
         summoner[i]=NULL;
-    }
+    };
     map=new Map();
+    skills=new Skills(map);
 }
 InGame::~InGame()
 {
@@ -22,6 +23,8 @@ InGame::~InGame()
             delete summoner[i];
         }
     }
+    delete map;
+    delete skills;
 }
 
 

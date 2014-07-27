@@ -1,6 +1,6 @@
 #include "skills.h"
 
-Skills::Skills()
+Skills::Skills(Map *map):map(map)
 {
 
 }
@@ -8,5 +8,6 @@ Skills::Skills()
 Skills& Skills::operator <<(Scenario* scenario)
 {
     playlet<<scenario;
+    scenario->ChangeMap(map);
     return *this;
 }

@@ -2,4 +2,5 @@
 
 Champion::Champion(QString NameOfChampion):NameOfChampion(NameOfChampion)
 {
+
 }
