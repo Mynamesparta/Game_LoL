@@ -28,7 +28,7 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     connect(qpbSingle,SIGNAL(clicked()),SLOT(slotSigleGame()));
     connect(qpbMulti,SIGNAL(clicked()),SLOT(slotMultiGame()));
     connect(qpbExit,SIGNAL(clicked()),SLOT(slotExit()));
-    connect(qpbBack,SIGNAL(clicked()),SLOT(slotBack()));
+    //connect(qpbBack,SIGNAL(clicked()),SLOT(slotBack()));
     connect(qpbLobby,SIGNAL(clicked()),SLOT(slotLobby()));
     connect(qpbLobbySearch,SIGNAL(clicked()),SLOT(slotLobbySearch()));
     connect(qpbLobbyCreate,SIGNAL(clicked()),SLOT(slotLobbyCreate()));
@@ -206,6 +206,8 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     qwinLobby->setLayout(qboxTtBinLobby);
     show();
     ShowButton(3);
+    qpbinLobbyStart->setEnabled(0);
+    slotMultiGame();
 }
 
 Client::~Client()
@@ -649,9 +651,9 @@ void Client::Register(QString UserName )
              if(qlMenu->isHidden())
              {
                  qlMenu->show();
-                 qpbSearch->show();
+                 //qpbSearch->show();
                  qpbLobby->show();
-                 qpbInfo->show();
+                 //qpbInfo->show();
                  qpbRename->show();
                  qpbExit->show();
              }
