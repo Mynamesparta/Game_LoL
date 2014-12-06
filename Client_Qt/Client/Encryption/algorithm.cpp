@@ -1,6 +1,6 @@
 #include "algorithm.h"
 //#include "LongNumber/longint.h"
-#define qA "algorithm.cpp"
+#define qA QString("algorithm.cpp")
 LongInt Algorithm::Karatsuba(LongInt a_1, LongInt b_1)
 {
     if(a_1.length()==1 || b_1.length()==1)//&&
@@ -916,16 +916,17 @@ LongInt Algorithm::Modular_exponentiation(LongInt a,LongInt m, LongInt r)
         return LongInt(1);
     }
     QVector<LongInt> part;
-    part<<1;
+    part;
     LongInt a_k(1),k(1);
 
     while(1)
     {
-        //qDebug()<<a_k<<a<<m;
+        qDebug()<<a_k<<a<<m;
         a_k=((a_k*a)%m);
         part<<a_k;
-        if(part.last()==1)
+        if(part.last()==part.first()&&part.length()!=1)
         {
+            qDebug()<<part;
             part.removeLast();
             //qDebug()<<"algorithm.cpp: Modular_exponentiation :"<<part.value( ((r % LongInt(part.length()))).toInt());
             return part.value( ((r % LongInt(part.length()))).toInt());
@@ -939,6 +940,23 @@ LongInt Algorithm::Modular_exponentiation(LongInt a,LongInt m, LongInt r)
         }
     }
 }
+
+LongInt Algorithm::fast_Modular_exponentiation(LongInt a,LongInt r, LongInt m)
+{
+    LongInt result = 1;
+    a = a % m;
+    while (r > 0)
+    {
+        if (r % 2 == 1)
+        {
+           result = (result * a) % m;
+        }
+        r= r /2;
+        a = a * a % m;
+    }
+    return result;
+}
+
 LongInt Algorithm::Eulers_totient(LongInt n)
 {
     LongInt ret(1);
@@ -974,12 +992,87 @@ LongInt Algorithm::Random(LongInt inf,LongInt sup)// random є [inf;sup]
         return -LongInt(0);
     }
     LongInt _a;
-    _a=LongInt(std::rand());
-    _a<<=10;
-    //_a/=LongInt(RAND_MAX+1);
-    _a=( _a % (sup-inf+1))+inf;
-    //qDebug()<<inf<<"<="<<_a<<"<="<<sup;
-    return _a;
+    _a=(LongInt(std::rand())%(sup-inf));
+    return _a+inf;
+}
+#define SIZE_OF_RANDOM (4/LongInt::baza_for_initializatio())
+#define MAX_OF_NUMERICAL (LongInt::baza()-1)
+LongInt Algorithm::norm_Random(LongInt inf, LongInt sup)
+{
+    if((sup-inf)<MAX_OF_NUMERICAL)
+    {
+        return Random(inf,sup);
+    }
+    LongInt result;
+    sup=sup-inf;
+    LongInt max_i=sup.length()%SIZE_OF_RANDOM,rand;
+
+    max_i=Random(0,sup.length()-1);
+    qDebug()<<qA<<"max_i"<<max_i;
+    if(max_i==0)
+    {
+        return inf+Random(0,MAX_OF_NUMERICAL);
+    }
+    bool is_max=1;
+    for(int i=0;max_i>i;i++)
+    {
+        rand=Random(0,MAX_OF_NUMERICAL);
+        if(rand>0)
+            is_max=0;
+        result=(result<<SIZE_OF_RANDOM)+rand;
+    }
+    result+= Random(1,sup>>((sup.length()%SIZE_OF_RANDOM))*
+                    SIZE_OF_RANDOM+(is_max?0:-1));
+    return inf+result;
+}
+
+LongInt Algorithm::norm_Random(LongInt inf,LongInt sup,bool is_norm)
+{
+    if(is_norm)
+    {
+        if(inf!=sup)
+        {
+            sup=LongInt(1)<<sup.toInt();
+        }
+        else
+        {
+            sup=(LongInt(1)<<(sup.toInt()+1))-1;
+        }
+        inf=LongInt(1)<<inf.toInt();
+        qDebug()<<qA<<inf<<sup;
+        return norm_Random(inf,sup);
+    }
+    else
+    {
+        if(inf==sup)
+        {
+            inf=LongInt(1)<<inf.toInt();
+            sup=(LongInt(1)<<(sup.toInt()+1))-1;
+            LongInt result;
+            sup=sup-inf;
+            LongInt max_i=sup.length()%SIZE_OF_RANDOM,rand;
+
+            max_i=sup.length()-1;//Random(0,sup.length()-1);
+            //qDebug()<<qA<<"max_i"<<max_i;
+            if(max_i==0)
+            {
+                return inf+Random(0,MAX_OF_NUMERICAL);
+            }
+            bool is_max=1;
+            for(int i=0;max_i>i;i++)
+            {
+                rand=Random(0,MAX_OF_NUMERICAL);
+                if(rand>0)
+                    is_max=0;
+                result=(result<<SIZE_OF_RANDOM)+rand;
+            }
+            result+= Random(1,sup>>((sup.length()%SIZE_OF_RANDOM))*
+                            SIZE_OF_RANDOM+(is_max?0:-1));
+            return inf+result;
+        }
+        else
+            return norm_Random(inf,sup);
+    }
 }
 
 //============================================================================================================

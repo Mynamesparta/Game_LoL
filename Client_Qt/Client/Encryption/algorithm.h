@@ -20,8 +20,8 @@ class LongInt
 {
 protected:
     static LongInt mod(const LongInt&,const LongInt&);
-    static const int _baza_for_initializatio=1;
-    static const int _baza=10;
+    static const int _baza_for_initializatio=4;
+    static const int _baza=10000;
     static bool is_Time_to_qDebug;
 public:
     LongInt();
@@ -143,9 +143,12 @@ public:
      static bool Solovay_Strassen(LongInt, int=1);
      static bool Agrawal_Kayal_Saxena(LongInt);
 
+     static LongInt norm_Random(LongInt, LongInt);
+     static LongInt norm_Random(LongInt, LongInt,bool);
 
      static int Modular_Multiplicative_Inverse(int,int);
      static LongInt Modular_exponentiation(LongInt a,LongInt m, LongInt r);
+     static LongInt fast_Modular_exponentiation(LongInt a,LongInt r, LongInt m);
      static LongInt Modular_Multiplicative_Inverse(LongInt, LongInt, bool* search_bag=NULL);
      static LongInt  HelloWorldofTest(LongInt, LongInt );
 

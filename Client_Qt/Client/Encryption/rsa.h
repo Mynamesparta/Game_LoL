@@ -1,10 +1,26 @@
 #ifndef RSA_H
 #define RSA_H
-
-class RSA
+#include <QString>
+#include "algorithm.h"
+class Algorithm;
+class LongInt;
+class RSA:public Algorithm
 {
-public:
     RSA();
+    static LongInt p_1,p_2;
+    static LongInt _public_key_mod;
+    static LongInt _public_key_e;
+    static LongInt _private_key_d;
+    static LongInt _min_key;
+public:
+    static void Generation();
+    static const LongInt& public_key_mod();
+    static const LongInt& public_key_e();
+    static const LongInt& private_key_d();
+    //static void setMinLenght(int);
+    static QString Encryption(const QString&);
+    static QString Decipherment(const QString&);
+
 };
 
 #endif // RSA_H

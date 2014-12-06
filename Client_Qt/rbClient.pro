@@ -20,7 +20,8 @@ SOURCES += \
     Client/Encryption/algorithm.cpp \
     Client/Encryption/LongNumber/longdouble.cpp \
     Client/Encryption/LongNumber/longint.cpp \
-    Client/Encryption/rsa.cpp
+    Client/Encryption/rsa.cpp \
+    Client/Encryption/symmetric.cpp
 
 HEADERS  += \
     Client/gamefield.h\
@@ -33,6 +34,7 @@ HEADERS  += \
     Object/champion_selection.h \
     Client/Encryption/algorithm.h \
     Client/Encryption/LongNumber/longdouble.h \
-    Client/Encryption/rsa.h
+    Client/Encryption/rsa.h \
+    Client/Encryption/symmetric.h
 
 

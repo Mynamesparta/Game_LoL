@@ -24,6 +24,7 @@ LongInt::LongInt(LongInt b)
 /*/
 LongInt::LongInt(QString qs_number):minus(0)
 {
+    qs_number.replace(" ","");
     if(qs_number==""||qs_number==" ")
     {
         number.push_back(0);
@@ -1235,11 +1236,11 @@ LongInt LongInt::operator >>(int num)
     LongInt b=*this;
     for(int i=0;i<num;i++)
     {
-        if(number.isEmpty())
+        if(b.number.isEmpty())
         {
             return b;
         }
-        number.removeLast();
+        b.number.removeLast();
     }
     return b;
 }
