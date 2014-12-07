@@ -123,6 +123,7 @@ class Lobby:public QObject
 {
     Q_OBJECT
 private:
+    static bool TimeToEncryption;
     void SendNameOfKing(ClientsInfo* client);
     QVector<ClientsInfo*> BlackTeam;
     QVector<ClientsInfo*> WhiteTeam;

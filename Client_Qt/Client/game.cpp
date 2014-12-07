@@ -1,5 +1,8 @@
 #include "game.h"
 #define qG QString("game.cpp:")
+
+bool Client::TimeToEncryption=true;
+
 Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     strHost("localhost"),nPort(nPort)
                     , m_nNextBlockSize(0),qre("Start Game:"),
@@ -457,12 +460,12 @@ void Client::slotReadyRead()
                     case inLobby:
                     {
                         qDebug()<<"inLobby"<<str;
-                        if(private_key_inLobby!=0)
+                        if(TimeToEncryption&&private_key_inLobby!=0)
                         {
                             Symmetric::setPrivateKey(private_key_inLobby);
                             str=Symmetric::Decipherment(str);
+                            qDebug()<<"inLobby"<<str;
                         }
-                        qDebug()<<"inLobby"<<str;
                         if(str.contains(qre))
                         {
                             str.replace("Start Game:","");

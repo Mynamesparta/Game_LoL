@@ -34,6 +34,8 @@ class Client : public QWidget
 {
     Q_OBJECT
 private:
+    static bool TimeToEncryption;
+
     void SendToServer(QString str);
     void Register(QString UserName) ;
     void CreateGameField(QString UsersName);

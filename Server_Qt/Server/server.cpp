@@ -1,5 +1,8 @@
 #include "server.h"
 #define qSer QString("server.cpp:")
+
+bool Lobby::TimeToEncryption=true;
+
 Server::Server(int nPort, QWidget *parent)
     : QWidget(parent),m_nNextBlockSize(0),
       qreUserName("[a-zA-z]{4,16}$"),qreCreateLobby("Create Lobby:([a-zA-z_ ]{3,30})$"),
@@ -689,6 +692,11 @@ void Lobby::SendNameOfKing(ClientsInfo* client)
     QString str="newKing [B]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
             " Lose:"+QString::number(client->TakeInfo("L"));
     QSendToClientEvent* pe=new QSendToClientEvent(client->TakeInfo("I"));
+    if(TimeToEncryption)
+    {
+        Symmetric::setPrivateKey(private_key());
+        str=Symmetric::Encryption(str);
+    }
     pe->Text=str;
     pe->forSwitch=0;
     QApplication::postEvent(server,pe);
@@ -715,6 +723,7 @@ void Lobby::newKing()
     pe->Text="You new King";
     pe->forSwitch=0;
     QApplication::postEvent(server,pe);
+    SendNameOfKing(client);
     //if(BlackTeam.length()+WhiteTeam.length()>1)
         //SendMessagetoClients(" <span style=color:#CD950C>new King of Lobby</span style>.",client);
 }
@@ -786,8 +795,11 @@ void Lobby::SendtoClient(QString Text, QString name)
 
 void Lobby::SendtoClients(QString str)
 {
-    Symmetric::setPrivateKey(_private_key);
-    str=Symmetric::Encryption(str);
+    if(TimeToEncryption)
+    {
+        Symmetric::setPrivateKey(_private_key);
+        str=Symmetric::Encryption(str);
+    }
     ClientsInfo* ci;
     QVector<ClientsInfo*>::iterator it=BlackTeam.begin();
     for(;it!=BlackTeam.end();++it)
@@ -810,8 +822,12 @@ void Lobby::SendtoClients(QString str)
 }
 void  Lobby::SendMessagetoClients(QString Text,ClientsInfo* client)
 {
-    Symmetric::setPrivateKey(_private_key);
-    QString ecText=Symmetric::Encryption("chat "+client->UserName+Text);
+    QString ecText=("chat "+client->UserName+Text);
+    if(TimeToEncryption)
+    {
+        ecText=Symmetric::Encryption(ecText);
+        Symmetric::setPrivateKey(_private_key);
+    }
     ClientsInfo* ci;
     QVector<ClientsInfo*>::iterator it=BlackTeam.begin();
     for(;it!=BlackTeam.end();++it)
