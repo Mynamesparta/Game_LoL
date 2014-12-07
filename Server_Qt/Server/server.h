@@ -166,6 +166,7 @@ public:
     QVector<ClientsInfo*> take_vectorOfWhiteTeam();
     QVector<ClientsInfo*> take_vectorOfBlackTeam();
     QString lengthOfTeam();
+    int lenght();
     QString LobbyName;
     QString pass;
 

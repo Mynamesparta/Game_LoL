@@ -1,7 +1,7 @@
 #include "game.h"
 #define qG QString("game.cpp:")
 
-bool Client::TimeToEncryption=true;
+bool Client::TimeToEncryption=false;
 
 Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     strHost("localhost"),nPort(nPort)
@@ -17,7 +17,7 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
                     qreFile("\"(.+)\" ((?:[0-9]{2}\.[0-9]{2}\.[0-9]{3}\.[0-9]{3})|localhost)"),
                     qreLobbySearch("(None)|([[a-zA-z_ ]{3,30} \\[[0-9]{1,2}\\|[0-9]{1,2}\\])"),
                     qreinLobbyRefreshPlayer("\\[(W|B)\\]([a-zA-z_]{4,16} Win:[0-9]{1,} Lose:[0-9]{1,})"),
-                    qreinLobby("(change|del|new|newKing) \\[(W|B)\\]([a-zA-z_]{4,16})( Win:[0-9]{1,3} Lose:[0-9]{1,3})"),
+                    qreinLobby("(change|del|new|newKing|King) \\[(W|B)\\]([a-zA-z_]{4,16})( Win:[0-9]{1,3} Lose:[0-9]{1,3})"),
                     qreinLobbyRefreshBot("Refresh Number of Bot:([0-9])([0-9])"),
                     qreinLobbyChat("chat ([a-zA-z]{4,16})([^\\^]+)$"),
                     qreinLobbyRSA("RSA: ([0-9 ]+),([0-9 ]+)"),
@@ -389,6 +389,17 @@ void Client::slotReadyRead()
                             CreateConnect();
                             break;
                         }
+                        if(str=="Send me public key")
+                        {
+                            RSA::Generation();
+                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
+                        }
+                        if(str.contains(qreinLobbySymmetric))
+                        {
+                            //qDebug()<<qG<<"test"<<qreinLobbySymmetric.cap(1);
+                            private_key_inLobby=LongInt(RSA::Decipherment(qreinLobbySymmetric.cap(1)));
+                            break;
+                        }
                         if(str=="Start Lobby")
                         {
                             hide();
@@ -396,8 +407,6 @@ void Client::slotReadyRead()
                             qwinLobby->show();
                             qpbinLobbyStart->hide();
                             state=inLobby;
-                            RSA::Generation();
-                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
                         }
                         break;
                     }
@@ -440,6 +449,17 @@ void Client::slotReadyRead()
 
                             break;
                         }
+                        if(str=="Send me public key")
+                        {
+                            RSA::Generation();
+                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
+                        }
+                        if(str.contains(qreinLobbySymmetric))
+                        {
+                            //qDebug()<<qG<<"test"<<qreinLobbySymmetric.cap(1);
+                            private_key_inLobby=LongInt(RSA::Decipherment(qreinLobbySymmetric.cap(1)));
+                            break;
+                        }
                         if(str=="Start Lobby")
                         {
                             hide();
@@ -451,8 +471,6 @@ void Client::slotReadyRead()
                             qpbinLobbyRemoveBotBlack->hide();
                             qpbinLobbyRemoveBotWhite->hide();
                             state=inLobby;
-                            RSA::Generation();
-                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
                         }
 
                         break;
@@ -563,7 +581,7 @@ void Client::slotReadyRead()
                                     qvstr_inLobbyBlackTeam.remove(Index);
                                     qvstr_inLobbyWhiteTeam<<qreinLobby.cap(3)+qreinLobby.cap(4);
                                 }
-                                //qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#696969> came out of the lobby</span style>.</H3>");
+                                qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#8B008B> change Team. The traitor!!!</span style>.</H3>");
                                 RefreshList();
                                 break;
                             }
@@ -572,6 +590,14 @@ void Client::slotReadyRead()
                                 qsKingOfLobby=qreinLobby.cap(3)+qreinLobby.cap(4);
                                 RefreshList();
                                 qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#CD950C> new King of Lobby</span style>.</H3>");
+                                break;
+                            }
+                            if(qreinLobby.cap(1)=="King")
+                            {
+                                qsKingOfLobby=qreinLobby.cap(3)+qreinLobby.cap(4);
+                                RefreshList();
+                                qteinLobbyChat->append("<H3><span style=color:#CD950C>King of Lobby</span style>-"+qreinLobby.cap(3)+".</H3>");
+                                break;
                             }
                             break;
                         }
@@ -611,12 +637,6 @@ void Client::slotReadyRead()
                             numberOfBotBlackTeam=qreinLobbyRefreshBot.cap(1).toInt();
                             numberOfBotWhiteTeam=qreinLobbyRefreshBot.cap(2).toInt();
                             RefreshList();
-                            break;
-                        }
-                        if(str.contains(qreinLobbySymmetric))
-                        {
-                            //qDebug()<<qG<<"test"<<qreinLobbySymmetric.cap(1);
-                            private_key_inLobby=LongInt(RSA::Decipherment(qreinLobbySymmetric.cap(1)));
                             break;
                         }
                         if(str.contains(qreinLobbyChat))
@@ -1021,6 +1041,10 @@ void Client::slotLobbyBack()
         }
         state=Menu;
     }
+    qvstr_inLobbyBlackTeam.clear();
+    qvstr_inLobbyWhiteTeam.clear();
+    qteinLobbyChat->clear();
+    RefreshList();
 }
 void Client::slotLobbyUpdate()
 {

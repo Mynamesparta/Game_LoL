@@ -1,7 +1,7 @@
 #include "server.h"
 #define qSer QString("server.cpp:")
 
-bool Lobby::TimeToEncryption=true;
+bool Lobby::TimeToEncryption=false;
 
 Server::Server(int nPort, QWidget *parent)
     : QWidget(parent),m_nNextBlockSize(0),
@@ -228,17 +228,15 @@ void Server::slotReadClient()
                                 break;
                             }
                         }
-                        if(isRename)break;
+                        if(isRename)
+                            break;
                         ciClient->lobby=new Lobby(ciClient,LobbyName,this);
                         ListofLobby<< ciClient->lobby;
-                        ciClient->state=inLobby;
-                        sendToClient(qtcpClient,"Start Lobby");
+                        //ciClient->state=inLobby;
+                        sendToClient(qtcpClient,"Send me public key");
 
                         Symmetric::Generation();
                         ciClient->lobby->setPrivateKey(Symmetric::private_key());
-                        qDebug()<<qSer<<"hello test";
-                        ciClient->lobby->RefreshList(ciClient);
-                        ciClient->lobby->newKing();
                         connect(ciClient->lobby,SIGNAL(sig_delete()),SLOT(slotDeleteLobby()));
                         connect(ciClient->lobby,SIGNAL(sig_createTheGame()),SLOT(slotinLobbyCreateGame()));
                         qDebug()<<"Create new Lobby:"+LobbyName+"!!";
@@ -254,11 +252,9 @@ void Server::slotReadClient()
                             ci=*it;
                             if(ci->LobbyName==LobbyName)
                             {
-                                ciClient->state=inLobby;
+                                //ciClient->state=inLobby;
                                 ciClient->lobby=ci;
-                                sendToClient(qtcpClient,"Start Lobby");
-                                ci->addUsers(ciClient);
-                                ci->RefreshList(ciClient);
+                                sendToClient(qtcpClient,"Send me public key");
                                 break;
                             }
                         }
@@ -267,6 +263,22 @@ void Server::slotReadClient()
                         {
                             sendToClient(qtcpClient,"error");
                         }
+                    }
+                    if(str.contains(qreinLobbyRSA))
+                    {
+                        ciClient->state=inLobby;
+                        RSA::setPublicKey(LongInt(qreinLobbyRSA.cap(1)),LongInt(qreinLobbyRSA.cap(2)));
+                        qDebug()<<qSer<<"key "+RSA::Encryption(ciClient->lobby->private_key().toString());
+
+                        sendToClient(qtcpClient,"key "+RSA::Encryption(ciClient->lobby->private_key().toString()));
+                        sendToClient(qtcpClient,"Start Lobby");
+                        if(ciClient->lobby->isKing(""))
+                            ciClient->lobby->newKing();
+                        else
+                            ciClient->lobby->addUsers(ciClient);
+                        ciClient->lobby->RefreshList(ciClient);
+
+                        break;
                     }
                 break;
             }
@@ -304,13 +316,6 @@ void Server::slotReadClient()
                 if(str.contains(qreinLobbyChat))
                 {
                     ciClient->lobby->SendMessagetoClients(qreinLobbyChat.cap(1),ciClient);
-                    break;
-                }
-                if(str.contains(qreinLobbyRSA))
-                {
-                    RSA::setPublicKey(LongInt(qreinLobbyRSA.cap(1)),LongInt(qreinLobbyRSA.cap(2)));
-                    qDebug()<<qSer<<"key "+RSA::Encryption(ciClient->lobby->private_key().toString());
-                    sendToClient(qtcpClient,"key "+RSA::Encryption(ciClient->lobby->private_key().toString()));
                     break;
                 }
                 if((ciClient->lobby!=NULL)&&(ciClient->lobby->isKing(ciClient->UserName)))
@@ -689,7 +694,7 @@ void Lobby::RefreshList(ClientsInfo* client)
 }
 void Lobby::SendNameOfKing(ClientsInfo* client)
 {
-    QString str="newKing [B]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
+    QString str="King [B]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
             " Lose:"+QString::number(client->TakeInfo("L"));
     QSendToClientEvent* pe=new QSendToClientEvent(client->TakeInfo("I"));
     if(TimeToEncryption)
@@ -703,6 +708,7 @@ void Lobby::SendNameOfKing(ClientsInfo* client)
 }
 void Lobby::newKing()
 {
+    qDebug()<<qLo<<"Hello test";
     ClientsInfo* client;
     if(BlackTeam.size()*!WhiteKing+!WhiteTeam.size())
     {
@@ -723,7 +729,7 @@ void Lobby::newKing()
     pe->Text="You new King";
     pe->forSwitch=0;
     QApplication::postEvent(server,pe);
-    SendNameOfKing(client);
+    //SendNameOfKing(client);
     //if(BlackTeam.length()+WhiteTeam.length()>1)
         //SendMessagetoClients(" <span style=color:#CD950C>new King of Lobby</span style>.",client);
 }
@@ -786,6 +792,11 @@ QString Lobby::lengthOfTeam()
     return (" ["+
             QString::number(BlackTeam.size())+"|"+
             QString::number(WhiteTeam.size())+"] ");
+}
+
+int Lobby::lenght()
+{
+    return BlackTeam.length()+WhiteTeam.length();
 }
 
 void Lobby::SendtoClient(QString Text, QString name)
