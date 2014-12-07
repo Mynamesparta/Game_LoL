@@ -79,6 +79,7 @@ private:
     QTextEdit* qteLobbyforWhite=new QTextEdit;
     QTextEdit* qteinLobbyChat=new QTextEdit;
     QLineEdit* qleinLobbyChat=new QLineEdit;
+    QLineEdit* qleinLobbySecretKey=new QLineEdit;
     QLabel* qlMenu=new QLabel;
     QPushButton* qpbSingle=new QPushButton("Single Game");
     QPushButton* qpbMulti=new QPushButton("Connect to Server");
@@ -165,6 +166,8 @@ private slots:
     void slotinLobbyRemoveWhite();
     void slotinLobbyRemoveBlack();
     void slotinLobbySend();
+    void slotinLobby_SKey_Chang(QString);
+    void slotinLobby_SKey_Edit(QString);
 
 signals:
     void sig_PauseGame(bool);

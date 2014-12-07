@@ -1,5 +1,5 @@
 #include "game.h"
-#define qCl QString("client.cpp:")
+#define qG QString("game.cpp:")
 Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     strHost("localhost"),nPort(nPort)
                     , m_nNextBlockSize(0),qre("Start Game:"),
@@ -49,6 +49,10 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     connect(qpbinLobbyRemoveBotBlack,SIGNAL(clicked()),SLOT(slotinLobbyRemoveBlack()));
     connect(qpbinLobbySend,SIGNAL(clicked()),SLOT(slotinLobbySend()));
     connect(qleinLobbyChat,SIGNAL(editingFinished()),SLOT(slotinLobbySend()));
+    connect(qleinLobbySecretKey,SIGNAL(textChanged(QString)),
+            this,SLOT(slotinLobby_SKey_Chang(QString)));
+    connect(qleinLobbySecretKey,SIGNAL(textEdited(QString)),
+            this,SLOT(slotinLobby_SKey_Edit(QString)));
     //+++++++++++++++Single+or+Multi+Game++++++++++++++++++++++++++
     qboxTtBSingleorMultiGame=new QBoxLayout(QBoxLayout::TopToBottom);
     qboxTtBSingleorMultiGame->addWidget(qpbSingle);
@@ -198,8 +202,11 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
 
     qboxLtRinLobby2->addWidget(qpbinLobbyBack,1);
     qboxLtRinLobby2->addWidget(qpbinLobbyChange,1);
-    qboxLtRinLobby2->addStretch(4);
+    qboxLtRinLobby2->addStretch(2);
+    qboxLtRinLobby2->addWidget(qleinLobbySecretKey,2);
     qboxLtRinLobby2->addWidget(qpbinLobbyStart,1);
+    qleinLobbySecretKey->setWhatsThis("Secret Key :)");
+    qleinLobbySecretKey->setEchoMode(QLineEdit::Password);
 
     qboxTtBinLobby->addLayout(qboxLtRinLobby1,6);
     qboxTtBinLobby->addLayout(qglInLobbyBot,2);
@@ -605,13 +612,22 @@ void Client::slotReadyRead()
                         }
                         if(str.contains(qreinLobbySymmetric))
                         {
-                            qDebug()<<qCl<<"test"<<qreinLobbySymmetric.cap(1);
+                            //qDebug()<<qG<<"test"<<qreinLobbySymmetric.cap(1);
                             private_key_inLobby=LongInt(RSA::Decipherment(qreinLobbySymmetric.cap(1)));
                             break;
                         }
                         if(str.contains(qreinLobbyChat))
                         {
-                            qteinLobbyChat->append("<H3><span style=color:#9370DB>"+qreinLobbyChat.cap(1)+"</span style>:"+Symmetric::Decipherment(qreinLobbyChat.cap(2))+"</H3>");
+                            static QString text;
+                            text=qreinLobbyChat.cap(2);
+                            Symmetric::setPrivateKey(private_key_inLobby);
+                            text=Symmetric::Decipherment(text);
+                            if(private_key_secret!=0)
+                            {
+                                Symmetric::setPrivateKey(private_key_secret);
+                                text=Symmetric::Decipherment(text);
+                            }
+                            qteinLobbyChat->append("<H3><span style=color:#9370DB>"+qreinLobbyChat.cap(1)+"</span style>:"+text+"</H3>");
                             break;
                         }
                         break;
@@ -1123,10 +1139,30 @@ void Client::slotinLobbySend()
 {
     if(qleinLobbyChat->text()!="")
     {
-        SendToServer("chat "+Symmetric::Encryption(qleinLobbyChat->text()+" "));
+        QString text=qleinLobbyChat->text()+" ";
+        if(private_key_secret!=0)
+        {
+            Symmetric::setPrivateKey(private_key_secret);
+            text=Symmetric::Encryption(text);
+        }
+        Symmetric::setPrivateKey(private_key_inLobby);
+        SendToServer("chat "+Symmetric::Encryption(text));
         qleinLobbyChat->setText("");
     }
 }
+
+void Client::slotinLobby_SKey_Chang(QString text)
+{
+    text.remove(QRegExp("[^0-9]"));
+    qleinLobbySecretKey->setText(text);
+}
+
+void Client::slotinLobby_SKey_Edit(QString text)
+{
+    private_key_secret=LongInt(text);
+    qDebug()<<qG<<"new secret key("<<private_key_secret<<")";
+}
+
 //=================Create|Destroy=Game========================
 void Client::CreateGameField(QString UsersName)
 {
