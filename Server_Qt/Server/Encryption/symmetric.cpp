@@ -69,7 +69,7 @@ QString Symmetric::Decipherment(const QString& encryption_text)
     return dicipherment_text;
 }
 
-inline const LongInt& Symmetric::private_key()
+const LongInt& Symmetric::private_key()
 {
     return _private_key;
 }

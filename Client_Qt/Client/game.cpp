@@ -1,4 +1,5 @@
 #include "game.h"
+#define qCl QString("client.cpp:")
 Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
     strHost("localhost"),nPort(nPort)
                     , m_nNextBlockSize(0),qre("Start Game:"),
@@ -13,10 +14,13 @@ Client::Client(int nPort, QWidget *pwgt) : QWidget(pwgt),
                     qreFile("\"(.+)\" ((?:[0-9]{2}\.[0-9]{2}\.[0-9]{3}\.[0-9]{3})|localhost)"),
                     qreLobbySearch("(None)|([[a-zA-z_ ]{3,30} \\[[0-9]{1,2}\\|[0-9]{1,2}\\])"),
                     qreinLobbyRefreshPlayer("\\[(W|B)\\]([a-zA-z_]{4,16} Win:[0-9]{1,} Lose:[0-9]{1,})"),
-                    qreinLobby("(change|del|new|newKing) \\[(W|B)\\]([a-zA-z_]{4,16} Win:[0-9]{1,3} Lose:[0-9]{1,3})"),
+                    qreinLobby("(change|del|new|newKing) \\[(W|B)\\]([a-zA-z_]{4,16})( Win:[0-9]{1,3} Lose:[0-9]{1,3})"),
                     qreinLobbyRefreshBot("Refresh Number of Bot:([0-9])([0-9])"),
-                    qreinLobbyChat("chat ([a-zA-z]{4,16})([^\\^]+)$")
+                    qreinLobbyChat("chat ([a-zA-z]{4,16})([^\\^]+)$"),
+                    qreinLobbyRSA("RSA: ([0-9 ]+),([0-9 ]+)"),
+                    qreinLobbySymmetric("key ([0-9 |]+)")
 {
+    Symmetric::setLenght(6);
     m_pTcpSocket = new QTcpSocket(this);
 
     connect(m_pTcpSocket, SIGNAL(connected()), SLOT(slotConnected()));
@@ -258,6 +262,12 @@ void Client::slotDisconnect()
 }
 void Client::slotConnected()
 {
+    /*/
+    Register("Mynamesparta");
+    //Register("Doomsday");
+    SendToServer("Create Lobby:DRAVENN");
+    return;
+    /*/
     qDebug()<<"Welcome to the League of DRAVENNN!!";
     bool b;
     QString UserName=QInputDialog::getText(0,"Rocket",
@@ -308,7 +318,7 @@ void Client::slotReadyRead()
             {
                 QString str;
                 in>>str;
-                //qDebug()<<str;
+                qDebug()<<str;
                 switch(state)
                 {
                     case Registration:
@@ -376,6 +386,8 @@ void Client::slotReadyRead()
                             qwinLobby->show();
                             qpbinLobbyStart->hide();
                             state=inLobby;
+                            RSA::Generation();
+                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
                         }
                         break;
                     }
@@ -429,41 +441,55 @@ void Client::slotReadyRead()
                             qpbinLobbyRemoveBotBlack->hide();
                             qpbinLobbyRemoveBotWhite->hide();
                             state=inLobby;
+                            RSA::Generation();
+                            SendToServer("RSA: "+RSA::public_key_e().toString()+","+RSA::public_key_mod().toString());
                         }
 
                         break;
                     }
                     case inLobby:
                     {
+                        qDebug()<<"inLobby"<<str;
+                        if(private_key_inLobby!=0)
+                        {
+                            Symmetric::setPrivateKey(private_key_inLobby);
+                            str=Symmetric::Decipherment(str);
+                        }
+                        qDebug()<<"inLobby"<<str;
                         if(str.contains(qre))
                         {
                             str.replace("Start Game:","");
                             CreateGameField(str);
                             state=inGame;
+                            private_key_inLobby=0;
                             qwinLobby->hide();
                         }
                         if(str=="add black bot")
                         {
                             numberOfBotBlackTeam++;
                             RefreshList();
+                            qteinLobbyChat->append("<H3><span style=color:#008B8B>add black bot</span style>.</H3>");
                             break;
                         }
                         if(str=="add white bot")
                         {
                             numberOfBotWhiteTeam++;
                             RefreshList();
+                            qteinLobbyChat->append("<H3><span style=color:#008B8B>add white bot</span style>.</H3>");
                             break;
                         }
                         if(str=="remove white bot")
                         {
                             numberOfBotWhiteTeam--;
                             RefreshList();
+                            qteinLobbyChat->append("<H3><span style=color:#008B8B>remove white bot</span style>.</H3>");
                             break;
                         }
                         if(str=="remove black bot")
                         {
                             numberOfBotBlackTeam--;
                             RefreshList();
+                            qteinLobbyChat->append("<H3><span style=color:#008B8B>remove black bot</span style>.</H3>");
                             break;
                         }
                         if(str=="You new King")
@@ -486,13 +512,14 @@ void Client::slotReadyRead()
                             {
                                 if(qreinLobby.cap(2)=="B")
                                 {
-                                    qvstr_inLobbyBlackTeam<<qreinLobby.cap(3);
+                                    qvstr_inLobbyBlackTeam<<qreinLobby.cap(3)+qreinLobby.cap(4);
                                 }
                                 else
                                 {
-                                    qvstr_inLobbyWhiteTeam<<qreinLobby.cap(3);
+                                    qvstr_inLobbyWhiteTeam<<qreinLobby.cap(3)+qreinLobby.cap(4);
                                 }
                                 RefreshList();
+                                qteinLobbyChat->append("<H3><span style=color:#006400>Welcome </span style>"+qreinLobby.cap(3)+"!</H3>");
                                 break;
                             }
                             if(qreinLobby.cap(1)=="del")
@@ -500,36 +527,41 @@ void Client::slotReadyRead()
                                 if(qreinLobby.cap(2)=="B")
                                 {
 
-                                    qvstr_inLobbyBlackTeam.remove(qvstr_inLobbyBlackTeam.indexOf(qreinLobby.cap(3)));
+                                    qvstr_inLobbyBlackTeam.remove(qvstr_inLobbyBlackTeam.indexOf(qreinLobby.cap(3)+qreinLobby.cap(4)));
                                 }
                                 else
                                 {
 
-                                    qvstr_inLobbyWhiteTeam.remove(qvstr_inLobbyWhiteTeam.indexOf(qreinLobby.cap(3)));
+                                    qvstr_inLobbyWhiteTeam.remove(qvstr_inLobbyWhiteTeam.indexOf(qreinLobby.cap(3)+qreinLobby.cap(4)));
                                 }
+                                qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#696969> came out of the lobby</span style>.</H3>");
                                 RefreshList();
+                                break;
                             }
                             if(qreinLobby.cap(1)=="change")
                             {
                                 int Index;
                                 if(qreinLobby.cap(2)=="B")
                                 {
-                                    Index=qvstr_inLobbyWhiteTeam.indexOf(qreinLobby.cap(3));
+                                    Index=qvstr_inLobbyWhiteTeam.indexOf(qreinLobby.cap(3)+qreinLobby.cap(4));
                                     qvstr_inLobbyWhiteTeam.remove(Index);
-                                    qvstr_inLobbyBlackTeam<<qreinLobby.cap(3);
+                                    qvstr_inLobbyBlackTeam<<qreinLobby.cap(3)+qreinLobby.cap(4);
                                 }
                                 else
                                 {
-                                    Index=qvstr_inLobbyBlackTeam.indexOf(qreinLobby.cap(3));
+                                    Index=qvstr_inLobbyBlackTeam.indexOf(qreinLobby.cap(3)+qreinLobby.cap(4));
                                     qvstr_inLobbyBlackTeam.remove(Index);
-                                    qvstr_inLobbyWhiteTeam<<qreinLobby.cap(3);
+                                    qvstr_inLobbyWhiteTeam<<qreinLobby.cap(3)+qreinLobby.cap(4);
                                 }
+                                //qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#696969> came out of the lobby</span style>.</H3>");
                                 RefreshList();
+                                break;
                             }
                             if(qreinLobby.cap(1)=="newKing")
                             {
-                                qsKingOfLobby=qreinLobby.cap(3);
+                                qsKingOfLobby=qreinLobby.cap(3)+qreinLobby.cap(4);
                                 RefreshList();
+                                qteinLobbyChat->append("<H3>"+qreinLobby.cap(3)+"<span style=color:#CD950C> new King of Lobby</span style>.</H3>");
                             }
                             break;
                         }
@@ -561,6 +593,7 @@ void Client::slotReadyRead()
                                    pos+=qreinLobbyRefreshPlayer.matchedLength();
                                 }
                             }
+                            break;
 
                         }
                         if(str.contains(qreinLobbyRefreshBot))
@@ -570,9 +603,16 @@ void Client::slotReadyRead()
                             RefreshList();
                             break;
                         }
+                        if(str.contains(qreinLobbySymmetric))
+                        {
+                            qDebug()<<qCl<<"test"<<qreinLobbySymmetric.cap(1);
+                            private_key_inLobby=LongInt(RSA::Decipherment(qreinLobbySymmetric.cap(1)));
+                            break;
+                        }
                         if(str.contains(qreinLobbyChat))
                         {
-                            qteinLobbyChat->append("<H3><span style=color:#9370DB>"+qreinLobbyChat.cap(1)+"</span style>"+qreinLobbyChat.cap(2)+"</H3>");
+                            qteinLobbyChat->append("<H3><span style=color:#9370DB>"+qreinLobbyChat.cap(1)+"</span style>:"+Symmetric::Decipherment(qreinLobbyChat.cap(2))+"</H3>");
+                            break;
                         }
                         break;
                     }
@@ -588,6 +628,7 @@ void Client::slotReadyRead()
                 break;
             }//case 0 :)
         }
+
         m_nNextBlockSize = 0;
     }
 }
@@ -936,6 +977,7 @@ void Client::slotLobbyCreate()
         SendToServer("Create Lobby:"+LobbyName);
         qwLobbySearch->hide();
         qwinLobby->show();
+        Symmetric::Generation();
     }
 
 
@@ -1081,7 +1123,7 @@ void Client::slotinLobbySend()
 {
     if(qleinLobbyChat->text()!="")
     {
-        SendToServer("chat "+qleinLobbyChat->text());
+        SendToServer("chat "+Symmetric::Encryption(qleinLobbyChat->text()+" "));
         qleinLobbyChat->setText("");
     }
 }

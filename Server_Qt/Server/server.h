@@ -10,12 +10,16 @@
 #include <QVector>
 #include "ingame.h"
 #include "Worlds/World_of_Const.h"
+#include "Encryption/rsa.h"
+#include "Encryption/symmetric.h"
 class QTcpServer;
 class QTcpSocket;
 class ClientsInfo;
 class InGame;
 class QSendToClientEvent;
 class Lobby;
+class RSA;
+class Symmetric;
 //struct rbw::PlayerExportInformation;
 class Server : public QWidget
 {
@@ -27,6 +31,7 @@ private:
     QRegExp qreCreateLobby;
     QRegExp qreContoLobby;
     QRegExp qreinLobbyChat;
+    QRegExp qreinLobbyRSA;
     quint16 m_nNextBlockSize;
     QList<unsigned int> qlSearch;
     int maxIndexClintInfo=-1;
@@ -123,6 +128,9 @@ private:
     QVector<ClientsInfo*> WhiteTeam;
     QObject* server;
     QString KingOfLobby;
+    LongInt _public_key_e;
+    LongInt _public_key_mod;
+    LongInt _private_key;
     ClientsInfo* ciKingOfLobby=NULL;
     int numberOfBotBlackTeam=0;
     int numberOfBotWhiteTeam=0;
@@ -135,8 +143,9 @@ public:
         BlackTeam<<ciCreator;
     }
     ~Lobby();
-    void SendtoClient(QString);
-    void SendMessagetoClient(QString Text, ClientsInfo *client);
+    void SendtoClient(QString,QString);
+    void SendtoClients(QString);
+    void SendMessagetoClients(QString Text, ClientsInfo *client);
     void addUsers(ClientsInfo* client);
     void addBot(QString);
     void RefreshNumberOfBot(ClientsInfo* client);
@@ -148,6 +157,11 @@ public:
     bool isKing(QString);
     void StartGame();
     void DeleteLobby();
+    //void setPublicKey(LongInt,LongInt);
+    void setPrivateKey(LongInt);
+    //inline LongInt& public_key_e();
+    //inline LongInt& public_key_mod();
+    inline LongInt& private_key();
     QVector<ClientsInfo*> take_vectorOfWhiteTeam();
     QVector<ClientsInfo*> take_vectorOfBlackTeam();
     QString lengthOfTeam();

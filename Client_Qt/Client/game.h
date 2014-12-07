@@ -22,6 +22,8 @@
 #include <QPushButton>
 
 #include "gamefield.h"
+#include "Encryption/rsa.h"
+#include "Encryption/symmetric.h"
 
 enum State{Registration,Menu,SearchGame,inLobbySearch,inLobby,inGame};
 class GameField;
@@ -119,6 +121,10 @@ private:
     QRegExp qreinLobby;
     QRegExp qreinLobbyRefreshBot;
     QRegExp qreinLobbyChat;
+    QRegExp qreinLobbyRSA;
+    QRegExp qreinLobbySymmetric;
+    LongInt private_key_inLobby;
+    LongInt private_key_secret;
     QPoint mptPosition;
     int nPort;
     int numberOfBotBlackTeam=0;

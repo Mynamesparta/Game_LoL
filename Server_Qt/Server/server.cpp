@@ -1,10 +1,11 @@
 #include "server.h"
-
+#define qSer QString("server.cpp:")
 Server::Server(int nPort, QWidget *parent)
     : QWidget(parent),m_nNextBlockSize(0),
       qreUserName("[a-zA-z]{4,16}$"),qreCreateLobby("Create Lobby:([a-zA-z_ ]{3,30})$"),
       qreContoLobby("con ([a-zA-z_ ]{3,30}) \\["),
-      qreinLobbyChat("chat ([^\\^]+)")
+      qreinLobbyChat("chat ([^\\^]+)"),
+      qreinLobbyRSA("RSA: ([0-9 ]+),([0-9 ]+)")
 {
     qtcpServer=new QTcpServer(this);
     if(!qtcpServer->listen(QHostAddress::Any,nPort))
@@ -54,7 +55,7 @@ void Server::slotDisconnect()
 {
     ClientsInfo* qtcpClient=(ClientsInfo*)sender();
     int Index=qtcpClient->TakeInfo("I");
-    qDebug()<<Index;
+    qDebug()<<qSer<<"Goodbuy "<<qtcpClient->UserName;
     switch(client[Index]->state)
     {
        case SearchGame:
@@ -99,7 +100,8 @@ void Server::slotReadClient()
         }
         QString str;
         in >> str;
-        //qDebug()<<ciClient->TakeInfo("I")<<"-"<<ciClient->UserName<<" say:"<<str;
+        qDebug()<<qSer<<ciClient->TakeInfo("I")<<"-"<<ciClient->UserName<<" say:"<<str;
+        qDebug()<<qSer<<"Client state:"<<ciClient->state;
         //----------------------State-------------------------------------
         switch(ciClient->state)
         {
@@ -229,6 +231,9 @@ void Server::slotReadClient()
                         ciClient->state=inLobby;
                         sendToClient(qtcpClient,"Start Lobby");
 
+                        Symmetric::Generation();
+                        ciClient->lobby->setPrivateKey(Symmetric::private_key());
+                        qDebug()<<qSer<<"hello test";
                         ciClient->lobby->RefreshList(ciClient);
                         ciClient->lobby->newKing();
                         connect(ciClient->lobby,SIGNAL(sig_delete()),SLOT(slotDeleteLobby()));
@@ -291,14 +296,24 @@ void Server::slotReadClient()
                     {
                         ciClient->lobby->StartGame();
                     }
+                    break;
+                }
+                if(str.contains(qreinLobbyChat))
+                {
+                    ciClient->lobby->SendMessagetoClients(qreinLobbyChat.cap(1),ciClient);
+                    break;
+                }
+                if(str.contains(qreinLobbyRSA))
+                {
+                    RSA::setPublicKey(LongInt(qreinLobbyRSA.cap(1)),LongInt(qreinLobbyRSA.cap(2)));
+                    qDebug()<<qSer<<"key "+RSA::Encryption(ciClient->lobby->private_key().toString());
+                    sendToClient(qtcpClient,"key "+RSA::Encryption(ciClient->lobby->private_key().toString()));
+                    break;
                 }
                 if((ciClient->lobby!=NULL)&&(ciClient->lobby->isKing(ciClient->UserName)))
                 {
                     ciClient->lobby->addBot(str);
-                }
-                if(str.contains(qreinLobbyChat))
-                {
-                    ciClient->lobby->SendMessagetoClient(":"+qreinLobbyChat.cap(1),ciClient);
+                    break;
                 }
                 break;
             }
@@ -496,6 +511,7 @@ int ClientsInfo::TakeInfo(const QString str)
     return -1;
 }
 //=============Lobby========================================
+#define qLo QString("server.cpp class Lobby:")
 Lobby::~Lobby()
 {
     ClientsInfo* ci;
@@ -519,15 +535,15 @@ void Lobby::addUsers(ClientsInfo* client)
                 " Lose:"+QString::number(client->TakeInfo("L"));
     if(BlackTeam.size()+numberOfBotBlackTeam <= WhiteTeam.size()+numberOfBotWhiteTeam)
     {
-        SendtoClient("new [B]"+str);
+        SendtoClients("new [B]"+str);
         BlackTeam<<client;
     }
     else
     {
-        SendtoClient("new [W]"+str);
+        SendtoClients("new [W]"+str);
         WhiteTeam<<client;
     }
-    SendMessagetoClient(" <span style=color:#006400>Welcome</span style>!",client);
+    //SendMessagetoClients(" <span style=color:#006400>Welcome</span style>!",client);
 }
 void Lobby::delUsers(ClientsInfo* client)
 {
@@ -536,13 +552,13 @@ void Lobby::delUsers(ClientsInfo* client)
     if(Index!=-1)
     {
         BlackTeam.remove(Index);
-        SendtoClient("del [B]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("del [B]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
     else
     {
         WhiteTeam.remove(WhiteTeam.indexOf(client));
-        SendtoClient("del [W]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("del [W]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
     client->lobby=NULL;
@@ -551,7 +567,7 @@ void Lobby::delUsers(ClientsInfo* client)
         sig_delete();
         return;
     }
-    SendMessagetoClient(" <span style=color:#696969>came out of the lobby</span style>.",client);
+    //SendMessagetoClients(" <span style=color:#696969>came out of the lobby</span style>.",client);
     if(client->UserName==KingOfLobby)
     {
         newKing();
@@ -564,8 +580,8 @@ void Lobby::addBot(QString str)
         if(numberOfBotBlackTeam<5)
         {
             numberOfBotBlackTeam++;
-            SendtoClient(str);
-            SendMessagetoClient(" <span style=color:#008B8B>add black bot</span style>.",ciKingOfLobby);
+            SendtoClients(str);
+            //SendMessagetoClients(" <span style=color:#008B8B>add black bot</span style>.",ciKingOfLobby);
         }
     }
     else
@@ -574,8 +590,8 @@ void Lobby::addBot(QString str)
             if(numberOfBotWhiteTeam<5)
             {
                 numberOfBotWhiteTeam++;
-                SendtoClient(str);
-                SendMessagetoClient(" <span style=color:#008B8B>add white bot</span style>.",ciKingOfLobby);
+                SendtoClients(str);
+                //SendMessagetoClients(" <span style=color:#008B8B>add white bot</span style>.",ciKingOfLobby);
             }
         }
         else
@@ -584,8 +600,8 @@ void Lobby::addBot(QString str)
                 if(numberOfBotWhiteTeam>0)
                 {
                     numberOfBotWhiteTeam--;
-                    SendtoClient(str);
-                    SendMessagetoClient(" <span style=color:#008B8B>remove white bot</span style>.",ciKingOfLobby);
+                    SendtoClients(str);
+                    //SendMessagetoClients(" <span style=color:#008B8B>remove white bot</span style>.",ciKingOfLobby);
                 }
             }
             else
@@ -594,8 +610,8 @@ void Lobby::addBot(QString str)
                     if(numberOfBotBlackTeam>0)
                     {
                         numberOfBotBlackTeam--;
-                        SendtoClient(str);
-                        SendMessagetoClient(" <span style=color:#008B8B>remove black bot</span style>.",ciKingOfLobby);
+                        SendtoClients(str);
+                        //SendMessagetoClients(" <span style=color:#008B8B>remove black bot</span style>.",ciKingOfLobby);
                     }
                 }
 }
@@ -629,14 +645,14 @@ void Lobby::ChangeTeam(ClientsInfo* client)
     {
         BlackTeam.remove(Index);
         WhiteTeam<<client;
-        SendtoClient("change [W]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("change [W]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
     else
     {
         WhiteTeam.remove(WhiteTeam.indexOf(client));
         BlackTeam<<client;
-        SendtoClient("change [B]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("change [B]"+client->UserName+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
 }
@@ -684,14 +700,14 @@ void Lobby::newKing()
     {
         client=BlackTeam.first();
         KingOfLobby=client->UserName;
-        SendtoClient("newKing [B]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("newKing [B]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
     else
     {
         client=WhiteTeam.first();
         KingOfLobby=client->UserName;
-        SendtoClient("newKing [W]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
+        SendtoClients("newKing [W]"+KingOfLobby+" Win:"+QString::number(client->TakeInfo("W"))+
                      " Lose:"+QString::number(client->TakeInfo("L")));
     }
     QSendToClientEvent* pe=new QSendToClientEvent(client->TakeInfo("I"));
@@ -699,7 +715,8 @@ void Lobby::newKing()
     pe->Text="You new King";
     pe->forSwitch=0;
     QApplication::postEvent(server,pe);
-    SendMessagetoClient(" <span style=color:#CD950C>new King of Lobby</span style>.",client);
+    //if(BlackTeam.length()+WhiteTeam.length()>1)
+        //SendMessagetoClients(" <span style=color:#CD950C>new King of Lobby</span style>.",client);
 }
 bool Lobby::isKing(QString UserName)
 {
@@ -713,12 +730,38 @@ void Lobby::StartGame()
     }
     else
     {
-        SendtoClient("None");
+        SendtoClients("None");
     }
 }
 void Lobby::DeleteLobby()
 {
     sig_delete();
+}
+/*/
+void Lobby::setPublicKey(LongInt e,LongInt mod)
+{
+    _public_key_e=e;
+    _public_key_mod=mod;
+}
+/*/
+void Lobby::setPrivateKey(LongInt d)
+{
+    _private_key=d;
+}
+/*/
+inline LongInt& Lobby::public_key_e()
+{
+    return _public_key_e;
+}
+
+inline LongInt& Lobby::public_key_mod()
+{
+    return _public_key_mod;
+}
+/*/
+inline LongInt& Lobby::private_key()
+{
+    return _private_key;
 }
 
 QVector<ClientsInfo*> Lobby::take_vectorOfWhiteTeam()
@@ -736,8 +779,15 @@ QString Lobby::lengthOfTeam()
             QString::number(WhiteTeam.size())+"] ");
 }
 
-void Lobby::SendtoClient(QString str)
+void Lobby::SendtoClient(QString Text, QString name)
 {
+
+}
+
+void Lobby::SendtoClients(QString str)
+{
+    Symmetric::setPrivateKey(_private_key);
+    str=Symmetric::Encryption(str);
     ClientsInfo* ci;
     QVector<ClientsInfo*>::iterator it=BlackTeam.begin();
     for(;it!=BlackTeam.end();++it)
@@ -758,16 +808,17 @@ void Lobby::SendtoClient(QString str)
         QApplication::postEvent(server,pe);
     }
 }
-void  Lobby::SendMessagetoClient(QString Text,ClientsInfo* client)
+void  Lobby::SendMessagetoClients(QString Text,ClientsInfo* client)
 {
-
+    Symmetric::setPrivateKey(_private_key);
+    QString ecText=Symmetric::Encryption("chat "+client->UserName+Text);
     ClientsInfo* ci;
     QVector<ClientsInfo*>::iterator it=BlackTeam.begin();
     for(;it!=BlackTeam.end();++it)
     {
         ci=*it;
         QSendToClientEvent* pe=new QSendToClientEvent(ci->TakeInfo("I"));
-        pe->Text="chat "+client->UserName+Text;
+        pe->Text=ecText;
         pe->forSwitch=0;
         QApplication::postEvent(server,pe);
     }
@@ -776,9 +827,10 @@ void  Lobby::SendMessagetoClient(QString Text,ClientsInfo* client)
     {
         ci=*it;
         QSendToClientEvent* pe=new QSendToClientEvent(ci->TakeInfo("I"));
-        pe->Text="chat "+client->UserName+Text;
+        pe->Text=ecText;
         pe->forSwitch=0;
         QApplication::postEvent(server,pe);
     }
     //qDebug()<<"chat "+ci->UserName+Text;
 }
+
